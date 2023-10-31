@@ -115,6 +115,25 @@ int freeBlock(heap_t *heap, char *block) {
     return 0;
 }
 
+void printMap(heap_t *heap) {
+    node_t *scn = heap->head;
+
+    for(int i = 0; i < heap->size; i++) {
+        printf("#");
+        for(int j = 0; j < scn->blockSize; j++) {
+            printf("#");
+        }
+        for(int j = 0; j < scn->blockSize; j++) {
+            if(scn->free == 0)
+                printf("+");
+            if(scn->free == 1)
+                printf("-");
+        }
+        scn = scn->next;
+    }
+    printf("\n");
+}
+
 int main(int argc, char **argv) {
     heap_t *heap;
     char *scanner;
@@ -126,13 +145,14 @@ int main(int argc, char **argv) {
     }   
     
     scanner = alocBlock(heap, 50);
-
-    printf("%p %d - %d %d %p %p %p %p\n", heap->head, heap->size, heap->head->free, heap->head->blockSize, &(heap->head->block), heap->head->block, &(heap->head->next), heap->head->next);
-    printf("%p\n", scanner);
-
+    printMap(heap);
     freeBlock(heap, scanner);
-    printf("%d\n", heap->head->free);
-
+    printMap(heap);
+    scanner = alocBlock(heap, 60);
+    printMap(heap);
+    scanner = alocBlock(heap, 30);
+    printMap(heap);
+    
     heap = endAllocator(heap);
 
     return 0;
