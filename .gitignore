@@ -1,0 +1,6 @@
+#test files
+test.c
+test.s
+
+#executable
+a.out
