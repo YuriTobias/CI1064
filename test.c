@@ -29,10 +29,10 @@ int main() {
     finalizaAlocador();
     // printf("%p\n", aposAlteracao);
     printf("%p\n", resetaHeap);
-    alocaMem(20);
     alocaMem(30);
-    alocaMem(40);
-    alocaMem(20);
+    alocaMem(30);
+    alocaMem(30);
+    alocaMem(30);
     alocaMem(30);
 
     return 0;

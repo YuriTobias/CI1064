@@ -1,10 +1,11 @@
 .section .data
-    topoInicialHeap:   .quad 0
-    aposAlteracao:     .quad 0
-    resetaHeap:        .quad 0 
-    formatString:      .string "Valor da brk: %p\n"
-    formatStringInit:  .string "Iniciando printf...\n"
-    formatNumber:       .string "Number: %d\n"
+    topoInicialHeap:        .quad 0
+    aposAlteracao:          .quad 0
+    resetaHeap:             .quad 0
+    formatString:           .string "Valor da brk: %p\n"
+    formatStringInit:       .string "Iniciando printf...\n"
+    formatMallocError:      .string "Erro de alocacao de memoria (malloc)\n"
+    formatNumber:           .string "Number: %d\n"
 .section .text
     .global sum
     .global sum_2
@@ -74,15 +75,69 @@ alocaMem:
     pushq %rbp
     movq %rsp, %rbp
 
-    # Aloca 20bytes e retorna o endereco inicial no rax
-    # movq $20, %rdi
+    # Aloca a quantidade de bytes que vier no rdi e retorna o endereco inicial no rax
     call malloc
+    # Compara o valor retornado no rax com NULL = 0, se for igual, desvia pra malloc_failed
+    cmpq $0, %rax
+    je malloc_failed
+
+    movq $1, (%rax)
+    movq $2, 8(%rax)
 
     # Preparando a pilha para a chamada do printf
     subq $8, %rbp
+    movq %rax, -8(%rbp)
+
+    # Chama printf para exibir uma mensagem
+    leaq formatNumber(%rip), %rdi
+    movq (%rax), %rsi
+    call printf
+
+    # Restaurando a pilha
+    movq -8(%rbp), %rax
+    addq $8, %rbp
+
+    # Preparando a pilha para a chamada do printf
+    subq $8, %rbp
+    movq %rax, -8(%rbp)
+
+    # Chama printf para exibir uma mensagem
+    leaq formatNumber(%rip), %rdi
+    movq 8(%rax), %rsi
+    call printf
+
+    # Restaurando a pilha
+    movq -8(%rbp), %rax
+    addq $8, %rbp
+
+    # Preparando a pilha para a chamada do printf
+    subq $8, %rbp
+    movq %rax, -8(%rbp)
 
     # Chama printf para exibir uma mensagem
     leaq formatString(%rip), %rdi
+    movq %rax, %rsi
+    call printf
+
+    # Restaurando a pilha
+    movq -8(%rbp), %rax
+    addq $8, %rbp
+
+    movq %rax, %rdi
+    call free
+
+    popq %rbp
+    ret
+
+malloc_failed:
+    pushq %rbp
+    movq %rsp, %rbp
+    
+    # Preparando a pilha para a chamada do printf
+    subq $8, %rbp
+
+    # Chama printf para exibir uma mensagem de erro de alocacao
+    leaq formatMallocError(%rip), %rdi
     movq %rax, %rsi
     call printf
 
