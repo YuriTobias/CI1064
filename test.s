@@ -1,19 +1,16 @@
 .section .data
     topoInicialHeap:        .quad 0
-    aposAlteracao:          .quad 0
     resetaHeap:             .quad 0
     formatString:           .string "Valor da brk: %p\n"
     formatStringInit:       .string "Iniciando printf...\n"
     formatMallocError:      .string "Erro de alocacao de memoria (malloc)\n"
     formatNumber:           .string "Number: %d\n"
+
 .section .text
-    .global sum
-    .global sum_2
     .global iniciaAlocador
     .global finalizaAlocador
     .global alocaMem
     .global topoInicialHeap
-    .global aposAlteracao
     .global resetaHeap
 
 iniciaAlocador:
@@ -24,6 +21,7 @@ iniciaAlocador:
     subq $8, %rbp
 
     # Chama printf para exibir uma mensagem
+    # O (%rip) eh util por conta do enderecamento relativo
     leaq formatStringInit(%rip), %rdi
     call printf
 
@@ -36,8 +34,16 @@ iniciaAlocador:
     syscall
 
     # Armazena o valor obtido na variavel global topoIniciaHeap
-    # O (%rip) eh util por conta do enderecamento relativo
     movq %rax, topoInicialHeap(%rip)
+
+    movq %rax, %rdi
+    addq $1040, %rdi
+    movq $12, %rax
+    syscall
+
+    movq topoInicialHeap(%rip), %rax
+    movq $1024, 0(%rax)
+    movq $0, 8(%rax)
 
     popq %rbp
     ret
@@ -45,20 +51,6 @@ iniciaAlocador:
 finalizaAlocador:
     pushq %rbp
     movq %rsp, %rbp
-
-    # Pega o valor atual
-    # movq $12, %rax
-    # movq $0, %rdi
-    # syscall
-
-    # Soma 2048 ao valor atual e chama o syscall pra atualizar a brk
-    # movq %rax, %rdi
-    # movq $12, %rax
-    # addq $2048, %rdi
-    # syscall
-
-    # Armazena o novo valor da brk na variavel global aposAlteracao
-    # movq %rax, aposAlteracao(%rip)
 
     # Reseta o valor da brk pro seu valor inicial
     movq $12, %rax
@@ -75,70 +67,86 @@ alocaMem:
     pushq %rbp
     movq %rsp, %rbp
 
-    # Aloca a quantidade de bytes que vier no rdi e retorna o endereco inicial no rax
-    call malloc
-    # Compara o valor retornado no rax com NULL = 0, se for igual, desvia pra malloc_failed
-    cmpq $0, %rax
-    je malloc_failed
+    # Salva o rdi, ou seja, a quantidade de bytes a ser alocada
+    movq %rdi, -8(%rbp)
 
-    movq $1, (%rax)
-    movq $2, 8(%rax)
+    # Move o endereço do topo da heap pro rdi
+    movq topoInicialHeap(%rip), %rdi
+    jmp buscaUltimo_
+    
+    # cmpq $1024, (%rax)
+    # je fim_
 
-    # Preparando a pilha para a chamada do printf
-    subq $8, %rbp
-    movq %rax, -8(%rbp)
+    movq topoInicialHeap(%rip), %rdi
+    addq $1024, %rdi
+    movq $12, %rax
+    syscall
 
-    # Chama printf para exibir uma mensagem
-    leaq formatNumber(%rip), %rdi
-    movq (%rax), %rsi
-    call printf
+    movq -8(%rbp), %rdi
 
-    # Restaurando a pilha
-    movq -8(%rbp), %rax
-    addq $8, %rbp
-
-    # Preparando a pilha para a chamada do printf
-    subq $8, %rbp
-    movq %rax, -8(%rbp)
-
-    # Chama printf para exibir uma mensagem
-    leaq formatNumber(%rip), %rdi
-    movq 8(%rax), %rsi
-    call printf
-
-    # Restaurando a pilha
-    movq -8(%rbp), %rax
-    addq $8, %rbp
+    movq topoInicialHeap(%rip), %rax
+    movq %rdi, 0(%rax)
+    movq $1, 8(%rax)
 
     # Preparando a pilha para a chamada do printf
     subq $8, %rbp
-    movq %rax, -8(%rbp)
 
     # Chama printf para exibir uma mensagem
+    # O (%rip) eh util por conta do enderecamento relativo
     leaq formatString(%rip), %rdi
     movq %rax, %rsi
     call printf
 
     # Restaurando a pilha
-    movq -8(%rbp), %rax
     addq $8, %rbp
 
-    movq %rax, %rdi
-    call free
+    movq topoInicialHeap(%rip), %rax
+
+    # Preparando a pilha para a chamada do printf
+    subq $8, %rbp
+
+    # Chama printf para exibir uma mensagem
+    # O (%rip) eh util por conta do enderecamento relativo
+    leaq formatNumber(%rip), %rdi
+    movq (%rax), %rsi
+    call printf
+
+    # Restaurando a pilha
+    addq $8, %rbp
+
+    movq topoInicialHeap(%rip), %rax
+
+    # Preparando a pilha para a chamada do printf
+    subq $8, %rbp
+
+    # Chama printf para exibir uma mensagem
+    # O (%rip) eh util por conta do enderecamento relativo
+    leaq formatNumber(%rip), %rdi
+    movq 8(%rax), %rsi
+    call printf
+
+    # Restaurando a pilha
+    addq $8, %rbp
+
+    movq topoInicialHeap(%rip), %rax
+    addq $16, %rax
 
     popq %rbp
     ret
 
-malloc_failed:
-    pushq %rbp
-    movq %rsp, %rbp
-    
+buscaUltimo_:
+    cmpq $1024, 0(%rdi)
+    je fim_
+
     # Preparando a pilha para a chamada do printf
     subq $8, %rbp
 
-    # Chama printf para exibir uma mensagem de erro de alocacao
-    leaq formatMallocError(%rip), %rdi
-    movq %rax, %rsi
+    movq %rdi, %rax
+
+    # Chama printf para exibir uma mensagem
+    # O (%rip) eh util por conta do enderecamento relativo
+    leaq formatNumber(%rip), %rdi
+    movq (%rax), %rsi
     call printf
 
     # Restaurando a pilha
@@ -147,19 +155,20 @@ malloc_failed:
     popq %rbp
     ret
 
-sum:
-    pushq %rbp
-    movq %rsp, %rbp
-    movq %rdi, %rax
-    movq %rsi, %rbx
-    addq %rbx, %rax
-    popq %rbp
-    ret
+fim_:
+    # Preparando a pilha para a chamada do printf
+    subq $8, %rbp
 
-sum_2:
-    pushq %rbp
-    movq %rsp, %rbp
     movq %rdi, %rax
-    addq $2, %rax
+
+    # Chama printf para exibir uma mensagem
+    # O (%rip) eh util por conta do enderecamento relativo
+    leaq formatNumber(%rip), %rdi
+    movq (%rax), %rsi
+    call printf
+
+    # Restaurando a pilha
+    addq $8, %rbp
+
     popq %rbp
     ret
