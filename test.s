@@ -3,6 +3,8 @@
     resetaHeap:             .quad 0
     formatString:           .string "Valor da brk: %p\n"
     formatStringInit:       .string "Iniciando printf...\n"
+    formatStringUltimo:     .string "Foi buscar o ultimo...\n"
+    formatStringCont:       .string "Continua pra comparar o tamanho...\n"
     formatMallocError:      .string "Erro de alocacao de memoria (malloc)\n"
     formatNumber:           .string "Number: %d\n"
 
@@ -13,37 +15,47 @@
     .global topoInicialHeap
     .global resetaHeap
 
-iniciaAlocador:
+# Obtem o valor atual da brk
+getBrk:
     pushq %rbp
     movq %rsp, %rbp
 
-    # Preparando a pilha para a chamada do printf
-    subq $8, %rbp
+    # Pega o valor atual do brk vide tabela presente no livro
+    movq $12, %rax
+    movq $0, %rdi
+    syscall
+
+    popq %rbp
+    ret
+
+iniciaAlocador:
+    pushq %rbp
+    movq %rsp, %rbp
 
     # Chama printf para exibir uma mensagem
     # O (%rip) eh util por conta do enderecamento relativo
     leaq formatStringInit(%rip), %rdi
     call printf
 
-    # Restaurando a pilha
-    addq $8, %rbp
-
-    # Pega o valor inicial do brk vide tabela presente no livro
-    movq $12, %rax
-    movq $0, %rdi
-    syscall
+    # Obtem o valor inicial da brk apos a chamada do printf
+    call getBrk
 
     # Armazena o valor obtido na variavel global topoIniciaHeap
     movq %rax, topoInicialHeap(%rip)
 
+    # Incrementa o valor da brk em 1040, ou seja,
+    # 8 bytes que dizem se o bloco ta livre ou nao
+    # 8 bytes que salvam o tamanho do bloco
+    # 1024 bytes do tamanho do bloco
     movq %rax, %rdi
     addq $1040, %rdi
     movq $12, %rax
     syscall
 
+    # Iniciando os valores
     movq topoInicialHeap(%rip), %rax
-    movq $1024, 0(%rax)
-    movq $0, 8(%rax)
+    movq $0, 0(%rax)
+    movq $1024, 8(%rax)
 
     popq %rbp
     ret
@@ -70,12 +82,20 @@ alocaMem:
     # Salva o rdi, ou seja, a quantidade de bytes a ser alocada
     movq %rdi, -8(%rbp)
 
-    # Move o endereço do topo da heap pro rdi
-    movq topoInicialHeap(%rip), %rdi
-    jmp buscaUltimo_
+    # Move o endereço do topo inicial da heap pro rax
+    movq topoInicialHeap(%rip), %rax
+    # Compara 0 com o valor do primeiro elemento da heap
+    cmpq $0, 0(%rax)
+    # Se nao for 0 entao o bloco esta ocupado e precisa buscar o ultimo elemento
+    jne buscaUltimo_
+
+    leaq formatStringCont(%rip), %rdi
+    call printf
     
-    # cmpq $1024, (%rax)
-    # je fim_
+    movq -8(%rbp), %rdi
+    movq topoInicialHeap(%rip), %rax
+    cmpq 8(%rax), %rdi
+    je fim_
 
     movq topoInicialHeap(%rip), %rdi
     addq $1024, %rdi
@@ -135,6 +155,9 @@ alocaMem:
     ret
 
 buscaUltimo_:
+    leaq formatStringUltimo(%rip), %rdi
+    call printf
+
     cmpq $1024, 0(%rdi)
     je fim_
 
