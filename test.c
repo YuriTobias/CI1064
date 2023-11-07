@@ -26,12 +26,12 @@ int main() {
     // topoInicialHeap = iniciaAlocador();
     iniciaAlocador();
     printf("%p\n", topoInicialHeap);
-    alocaMem(2);
-    alocaMem(2);
-    // alocaMem(50);
-    // alocaMem(30);
-    // alocaMem(30);
-    // alocaMem(30);
+    printf("-- %p\n", alocaMem(2));
+    printf("-- %p\n", alocaMem(2));
+    // printf("-- %p\n", alocaMem(10));
+    // printf("-- %p\n", alocaMem(20));
+    // printf("-- %p\n", alocaMem(25));
+    // printf("-- %p\n", alocaMem(30));
     // finalizaAlocador();
     // printf("%p\n", resetaHeap);
 

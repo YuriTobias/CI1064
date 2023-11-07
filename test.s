@@ -79,83 +79,69 @@ alocaMem:
     pushq %rbp
     movq %rsp, %rbp
 
+    subq $16, %rbp
+
     # Salva o rdi, ou seja, a quantidade de bytes a ser alocada
     movq %rdi, -8(%rbp)
 
     # Move o endereço do topo inicial da heap pro rax
     movq topoInicialHeap(%rip), %rax
+    movq %rax, -16(%rbp)
 
-    # Compara 0 com o valor do primeiro elemento da heap
 buscaEspaco:
     # Check if the element pointed by rax is free (=0)
+    movq -16(%rbp), %rax
     cmpq $0, 0(%rax)
-    je achouEspaco
-    # If it is not free, go to the next element
-    movq 8(%rax), %rbx
-    addq %rbx, %rax
-    jmp buscaEspaco
-achouEspaco:
-    leaq formatStringCont(%rip), %rdi
-    call printf
-    
-    movq -8(%rbp), %rdi
-    movq topoInicialHeap(%rip), %rax
-    cmpq 8(%rax), %rdi
-    je fim_
+    jne buscaProximo
+    movq %rdi, %rbx
+    addq $16, %rbx
+    cmpq %rbx, 8(%rax)
+    jge achouEspaco
 
-    movq topoInicialHeap(%rip), %rdi
-    addq $1024, %rdi
+buscaProximo:
+    # Encontra próximo bloco (atual+tamanho+16)
+    movq 8(%rax), %rbx
+    addq $16, %rbx
+    addq %rbx, -16(%rbp)
+    # Checa se estourou a brk
+    call getBrk
+    cmpq -16(%rbp), %rax
+    # Se não estourou, segue a busca
+    jge buscaEspaco
+    # Se estourou, aloca mais e já presume que encontrou
+    addq $1024, %rax
+    movq %rax, %rdi
     movq $12, %rax
     syscall
-
+    movq -16(%rbp), %rax
+achouEspaco: 
+    # Recupera o valor do parametro
     movq -8(%rbp), %rdi
+    
+    # Salva tamanho atual
+    movq 8(%rax), %rbx
 
-    movq topoInicialHeap(%rip), %rax
-    movq %rdi, 0(%rax)
-    movq $1, 8(%rax)
+    # Atualiza metadados
+    movq $1, (%rax)
+    movq %rdi, 8(%rax)
 
-    # Preparando a pilha para a chamada do printf
-    subq $8, %rbp
+    # Calcula espaco livre do proximo bloco
+    subq %rdi, %rbx
+    subq $16, %rbx
 
-    # Chama printf para exibir uma mensagem
-    # O (%rip) eh util por conta do enderecamento relativo
-    leaq formatString(%rip), %rdi
-    movq %rax, %rsi
-    call printf
+    # Get do endereco inicial do proximo bloco
+    movq %rax, %rdx
+    addq $16, %rdx
+    addq 8(%rax), %rdx
 
-    # Restaurando a pilha
-    addq $8, %rbp
+    # Atualiza os metadados do proximo bloco
+    movq $0, (%rdx)
+    movq %rbx, 8(%rdx)
 
-    movq topoInicialHeap(%rip), %rax
-
-    # Preparando a pilha para a chamada do printf
-    subq $8, %rbp
-
-    # Chama printf para exibir uma mensagem
-    # O (%rip) eh util por conta do enderecamento relativo
-    leaq formatNumber(%rip), %rdi
-    movq (%rax), %rsi
-    call printf
-
-    # Restaurando a pilha
-    addq $8, %rbp
-
-    movq topoInicialHeap(%rip), %rax
-
-    # Preparando a pilha para a chamada do printf
-    subq $8, %rbp
-
-    # Chama printf para exibir uma mensagem
-    # O (%rip) eh util por conta do enderecamento relativo
-    leaq formatNumber(%rip), %rdi
-    movq 8(%rax), %rsi
-    call printf
-
-    # Restaurando a pilha
-    addq $8, %rbp
-
-    movq topoInicialHeap(%rip), %rax
+    # Retorna o endereco bloco alocado
     addq $16, %rax
+
+    addq $16, %rbp
 
     popq %rbp
     ret
@@ -164,12 +150,7 @@ fim_:
     # Preparando a pilha para a chamada do printf
     subq $8, %rbp
 
-    movq %rdi, %rax
-
-    # Chama printf para exibir uma mensagem
-    # O (%rip) eh util por conta do enderecamento relativo
-    leaq formatNumber(%rip), %rdi
-    movq (%rax), %rsi
+    leaq formatStringUltimo(%rip), %rdi
     call printf
 
     # Restaurando a pilha
