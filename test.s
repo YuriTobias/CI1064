@@ -84,11 +84,17 @@ alocaMem:
 
     # Move o endereço do topo inicial da heap pro rax
     movq topoInicialHeap(%rip), %rax
-    # Compara 0 com o valor do primeiro elemento da heap
-    cmpq $0, 0(%rax)
-    # Se nao for 0 entao o bloco esta ocupado e precisa buscar o ultimo elemento
-    jne buscaUltimo_
 
+    # Compara 0 com o valor do primeiro elemento da heap
+buscaEspaco:
+    # Check if the element pointed by rax is free (=0)
+    cmpq $0, 0(%rax)
+    je achouEspaco
+    # If it is not free, go to the next element
+    movq 8(%rax), %rbx
+    addq %rbx, %rax
+    jmp buscaEspaco
+achouEspaco:
     leaq formatStringCont(%rip), %rdi
     call printf
     
@@ -150,30 +156,6 @@ alocaMem:
 
     movq topoInicialHeap(%rip), %rax
     addq $16, %rax
-
-    popq %rbp
-    ret
-
-buscaUltimo_:
-    leaq formatStringUltimo(%rip), %rdi
-    call printf
-
-    cmpq $1024, 0(%rdi)
-    je fim_
-
-    # Preparando a pilha para a chamada do printf
-    subq $8, %rbp
-
-    movq %rdi, %rax
-
-    # Chama printf para exibir uma mensagem
-    # O (%rip) eh util por conta do enderecamento relativo
-    leaq formatNumber(%rip), %rdi
-    movq (%rax), %rsi
-    call printf
-
-    # Restaurando a pilha
-    addq $8, %rbp
 
     popq %rbp
     ret
