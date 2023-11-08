@@ -7,6 +7,9 @@
     formatStringCont:       .string "Continua pra comparar o tamanho...\n"
     formatMallocError:      .string "Erro de alocacao de memoria (malloc)\n"
     formatNumber:           .string "Number: %d\n"
+    formatAddress:          .string "Block address: %p\n"
+    formatStatus:           .string "      status: %d\n"
+    formatSize:             .string "      size: %d\n"
 
 .section .text
     .global iniciaAlocador
@@ -15,6 +18,7 @@
     .global liberaMem
     .global topoInicialHeap
     .global resetaHeap
+    .global printMem
 
 # Obtem o valor atual da brk
 getBrk:
@@ -270,5 +274,49 @@ fim_:
     # Restaurando a pilha
     addq $8, %rbp
 
+    popq %rbp
+    ret
+
+printMem:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $8, %rbp
+    /*
+    Local variables:
+    -8(%rbp) = current block address
+    */
+    movq topoInicialHeap(%rip), %r10
+    movq %r10, -8(%rbp)
+printLoop:
+    // Print the current block address
+    movq -8(%rbp), %r10
+    addq $16, %r10
+    movq %r10, %rsi
+    leaq formatAddress(%rip), %rdi
+    call printf
+    // Print the current block status
+    movq -8(%rbp), %r10
+    movq 0(%r10), %r11
+    movq %r11, %rsi
+    leaq formatStatus(%rip), %rdi
+    call printf
+    // Print the current block size
+    movq -8(%rbp), %r10
+    movq 8(%r10), %r11
+    movq %r11, %rsi
+    leaq formatSize(%rip), %rdi
+    call printf
+    // Update the current block address
+    movq -8(%rbp), %r10
+    addq 8(%r10), %r10
+    addq $16, %r10
+    movq %r10, -8(%rbp)
+    // Check if the next block exists
+    movq $12, %rax
+    movq $0, %rdi
+    syscall
+    cmpq %rax, %r10
+    jl printLoop
+    addq $8, %rbp
     popq %rbp
     ret

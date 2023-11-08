@@ -19,6 +19,8 @@ extern void* aposAlteracao;
 
 extern void* resetaHeap;
 
+extern void printMem();
+
 int main() {
     int c, *i, *p;
 
@@ -43,6 +45,7 @@ int main() {
     printf("-- %p (%li)\n", p, (p - i) * 4);
     p = allocMem(8);
     printf("-- %p (%li)\n", p, (p - i) * 4);
+    printMem();
     liberaMem(topoInicialHeap + 16);
     // liberaMem(topoInicialHeap+34);
     int* ptr = (int*)((char*)topoInicialHeap + 8);  // Convertemos para int* e somamos 8 bytes.
