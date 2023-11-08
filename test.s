@@ -90,36 +90,36 @@ allocMem:
         -32(%rbp) = current block size
     */
     movq %rdi, -8(%rbp)    
-    movq topoInicialHeap(%rip), %rax
-    movq %rax, -16(%rbp)
-    movq 0(%rax), %rbx
+    movq topoInicialHeap(%rip), %r10
+    movq %r10, -16(%rbp)
+    movq 0(%r10), %rbx
     movq %rbx, -24(%rbp)
-    movq 8(%rax), %rbx
+    movq 8(%r10), %rbx
     movq %rbx, -32(%rbp)
 searchFreeBlock:
     // Check if current block is free
     cmpq $0, -24(%rbp)
     jne findNextBlock
     // Check if current block has enough space
-    movq -8(%rbp), %rax
-    addq $16, %rax
-    cmpq %rax, -32(%rbp)
+    movq -8(%rbp), %r10
+    addq $16, %r10
+    cmpq %r10, -32(%rbp)
     jge reserveBlock
 findNextBlock:
     // Find the next block
-    movq -16(%rbp), %rbx
-    addq $16, %rbx
-    addq -32(%rbp), %rbx
+    movq -16(%rbp), %r10
+    addq $16, %r10
+    addq -32(%rbp), %r10
     // Check if the next block exists
     call getBrk
-    cmpq %rax, %rbx
+    cmpq %rax, %r10
     jge resizeHeap
     // Update current block to the next one
-    movq %rbx, -16(%rbp)
-    movq 0(%rbx), %rax
-    movq %rax, -24(%rbp)
-    movq 8(%rbx), %rax
-    movq %rax, -32(%rbp)
+    movq %r10, -16(%rbp)
+    movq 0(%r10), %r11
+    movq %r11, -24(%rbp)
+    movq 8(%r10), %r11
+    movq %r11, -32(%rbp)
     jmp searchFreeBlock
 resizeHeap:
     // Resize the heap adding 1024 bytes to the brk
@@ -131,37 +131,35 @@ resizeHeap:
     cmpq $0, -24(%rbp)
     je mergeBlocks
     // Create a new block in the resized heap right after the current one
-    movq -16(%rbp), %rax
-    addq $16, %rax
-    addq -32(%rbp), %rax
-    movq %rax, -16(%rbp)
+    movq %r10, -16(%rbp)
     movq $0, -24(%rbp)
     movq $1024, -32(%rbp)
     jmp reserveBlock
 mergeBlocks:
     // Update the current block size the resized heap 1024 bytes
-    movq -16(%rbp), %rax
-    addq $1024, 8(%rax)
-    movq %rax, -32(%rbp)
+    movq -16(%rbp), %r10
+    addq $1024, 8(%r10)
+    movq 8(%r10), %r11
+    movq %r11, -32(%rbp)
 reserveBlock:
-    movq -8(%rbp), %rax
-    movq -16(%rbp), %rbx
-    movq -32(%rbp), %rcx
+    movq -8(%rbp), %rbx
+    movq -16(%rbp), %r10
+    movq -32(%rbp), %r11
     // Reserve space on the current block
-    movq $1, 0(%rbx)
-    movq %rax, 8(%rbx)
+    movq $1, 0(%r10)
+    movq %rbx, 8(%r10)
     // Calculate the space occupied by the reserved block
-    movq %rax, %rdx
+    movq %rbx, %rdx
     addq $16, %rdx
     // Calculate the size of the remaining block
-    subq %rdx, %rcx
+    subq %rdx, %r11
     // Find and create the remaining block
-    addq %rbx, %rdx
+    addq %r10, %rdx
     movq $0, 0(%rdx)
-    movq %rcx, 8(%rdx)
+    movq %r11, 8(%rdx)
     // Return the address of data of the reserved block
-    addq $16, %rbx
-    movq %rbx, %rax
+    addq $16, %r10
+    movq %r10, %rax
     addq $32, %rbp
     popq %rbp
     ret
