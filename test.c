@@ -11,6 +11,8 @@ extern void finalizaAlocador();
 
 extern void* alocaMem(int);
 
+extern int liberaMem(void *block);
+
 extern void* topoInicialHeap;
 
 extern void* aposAlteracao;
@@ -28,6 +30,11 @@ int main() {
     printf("%p\n", topoInicialHeap);
     printf("-- %p\n", alocaMem(2));
     printf("-- %p\n", alocaMem(2));
+    liberaMem(topoInicialHeap+16);
+    // liberaMem(topoInicialHeap+34);
+    int* ptr = (int*)((char*)topoInicialHeap + 8); // Convertemos para int* e somamos 8 bytes.
+    int valor = *ptr; // Acessamos o valor inteiro.
+    printf("--- %d\n",  valor);
     // printf("-- %p\n", alocaMem(10));
     // printf("-- %p\n", alocaMem(20));
     // printf("-- %p\n", alocaMem(25));
