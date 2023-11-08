@@ -10,6 +10,7 @@
     formatAddress:          .string "Block address: %p\n"
     formatStatus:           .string "      status: %d\n"
     formatSize:             .string "      size: %d\n"
+    formatChar:             .string "%c"
 
 .section .text
     .global iniciaAlocador
@@ -19,6 +20,7 @@
     .global topoInicialHeap
     .global resetaHeap
     .global printMem
+    .global printMemChars
 
 # Obtem o valor atual da brk
 getBrk:
@@ -85,7 +87,7 @@ finalizaAlocador:
 allocMem:
     pushq %rbp
     movq %rsp, %rbp
-    subq $32, %rbp
+    subq $32, %rsp
     /*
         Local variables:
         -8(%rbp) = bytes to be allocated
@@ -164,7 +166,7 @@ reserveBlock:
     // Return the address of data of the reserved block
     addq $16, %r10
     movq %r10, %rax
-    addq $32, %rbp
+    addq $32, %rsp
     popq %rbp
     ret
 
@@ -173,7 +175,7 @@ liberaMem:
     movq %rsp, %rbp
     
     # Reserva espaço para quatro variáveis
-    subq $32, %rbp
+    subq $32, %rsp
 
     # Guarda o valor do parâmetro em -8(%rbp)
     movq %rdi, -8(%rbp)
@@ -259,20 +261,22 @@ finalizaLibera:
     # call printf
 
     # Libera o espaço reservado para as variáveis
-    addq $32, %rbp
+    addq $32, %rsp
     
     popq %rbp
     ret
 
 fim_:
     # Preparando a pilha para a chamada do printf
-    subq $8, %rbp
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $8, %rsp
 
     leaq formatStringUltimo(%rip), %rdi
     call printf
 
     # Restaurando a pilha
-    addq $8, %rbp
+    addq $8, %rsp
 
     popq %rbp
     ret
@@ -280,7 +284,7 @@ fim_:
 printMem:
     pushq %rbp
     movq %rsp, %rbp
-    subq $8, %rbp
+    subq $16, %rsp
     /*
     Local variables:
     -8(%rbp) = current block address
@@ -312,11 +316,64 @@ printLoop:
     addq $16, %r10
     movq %r10, -8(%rbp)
     // Check if the next block exists
-    movq $12, %rax
-    movq $0, %rdi
-    syscall
+    call getBrk
     cmpq %rax, %r10
     jl printLoop
-    addq $8, %rbp
+    addq $16, %rsp
+    popq %rbp
+    ret
+
+printMemChars:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $32, %rsp
+    /*
+    Local variables:
+    -8(%rbp) = current block address
+    -16(%rbp) = counter
+    -24(%rbp) = char to print
+    */
+    movq topoInicialHeap(%rip), %r10
+    movq %r10, -8(%rbp)
+iterateBlocks:
+    movq $0, -16(%rbp)
+    movq $35, -24(%rbp)
+printMetaSection:
+    movq -24(%rbp), %rsi
+    leaq formatChar(%rip), %rdi
+    call printf
+    addq $1, -16(%rbp)
+    cmpq $16, -16(%rbp)
+    jl printMetaSection
+    // Print the current block status
+    movq -8(%rbp), %r10
+    movq 0(%r10), %r11
+    movq 8(%r10), %r10
+    movq %r10, -16(%rbp)
+    cmpq $0, %r11
+    je freeBlockChar
+reservedBlockChar:
+    movq $43, -24(%rbp)
+    jmp printDataChar
+freeBlockChar:
+    movq $45, -24(%rbp)
+printDataChar:
+    movq -24(%rbp), %rsi
+    leaq formatChar(%rip), %rdi
+    call printf
+    subq $1, -16(%rbp)
+    cmpq $0, -16(%rbp)
+    jg printDataChar
+    // Update the current block address
+    movq -8(%rbp), %r10
+    addq 8(%r10), %r10
+    addq $16, %r10
+    movq %r10, -8(%rbp)
+    // Check if the next block exists
+    call getBrk
+    cmpq %rax, %r10
+    jl iterateBlocks
+    // Finish function
+    addq $32, %rsp
     popq %rbp
     ret

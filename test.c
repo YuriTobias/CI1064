@@ -21,6 +21,8 @@ extern void* resetaHeap;
 
 extern void printMem();
 
+extern void printMemChars();
+
 int main() {
     int c, *i, *p;
 
@@ -31,23 +33,14 @@ int main() {
     iniciaAlocador();
     i = topoInicialHeap;
     printf("%p\n", i);
-    p = allocMem(984);
+    p = allocMem(4);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = allocMem(8);
+    p = allocMem(4);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = allocMem(8);
-    printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = allocMem(8);
-    printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = allocMem(8);
-    printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = allocMem(8);
-    printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = allocMem(8);
-    printf("-- %p (%li)\n", p, (p - i) * 4);
-    printMem();
+    printMemChars();
+    printf("\n");
     liberaMem(topoInicialHeap + 16);
-    // liberaMem(topoInicialHeap+34);
+    //  liberaMem(topoInicialHeap+34);
     int* ptr = (int*)((char*)topoInicialHeap + 8);  // Convertemos para int* e somamos 8 bytes.
     int valor = *ptr;                               // Acessamos o valor inteiro.
     printf("--- %d\n", valor);
