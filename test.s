@@ -358,12 +358,14 @@ reservedBlockChar:
 freeBlockChar:
     movq $45, -24(%rbp)
 printDataChar:
+    cmpq $0, -16(%rbp)
+    jle fimPrintDataChar
     movq -24(%rbp), %rsi
     leaq formatChar(%rip), %rdi
     call printf
     subq $1, -16(%rbp)
-    cmpq $0, -16(%rbp)
-    jg printDataChar
+    jmp printDataChar
+fimPrintDataChar:
     // Update the current block address
     movq -8(%rbp), %r10
     addq 8(%r10), %r10
