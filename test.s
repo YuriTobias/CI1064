@@ -11,7 +11,7 @@
 .section .text
     .global iniciaAlocador
     .global finalizaAlocador
-    .global alocaMem
+    .global allocMem
     .global topoInicialHeap
     .global resetaHeap
 
@@ -77,16 +77,17 @@ finalizaAlocador:
 
     // Memory allocation function with brk redimensioning and 
 
-alocaMem:
+allocMem:
     pushq %rbp
     movq %rsp, %rbp
     subq $32, %rbp
-
-    # Variáveis locais:
-    # -8(%rbp) = %rdi = quantidade de bytes a ser alocada
-    # -16(%rbp) = %rax = endereço do bloco atual (inicialmente topoInicialHeap)
-    # -24(%rbp) = 0(%rax) = situação do bloco atual (0 = livre, 1 = ocupado)
-    # -32(%rbp) = 8(%rax) = tamanho do bloco atual
+    /*
+        Local variables:
+        -8(%rbp) = bytes to be allocated
+        -16(%rbp) = current block address
+        -24(%rbp) = current block status (0 = free, 1 = occupied)
+        -32(%rbp) = current block size
+    */
     movq %rdi, -8(%rbp)    
     movq topoInicialHeap(%rip), %rax
     movq %rax, -16(%rbp)
@@ -94,63 +95,70 @@ alocaMem:
     movq %rbx, -24(%rbp)
     movq 8(%rax), %rbx
     movq %rbx, -32(%rbp)
-buscaEspaco:
+searchFreeBlock:
+    // Check if current block is free
     cmpq $0, -24(%rbp)
-    jne buscaProximo # Caso bloco ocupado
+    jne findNextBlock
+    // Check if current block has enough space
     movq -8(%rbp), %rax
     addq $16, %rax
     cmpq %rax, -32(%rbp)
-    jge achouEspaco # Caso bloco livre com tamanho suficiente
-buscaProximo:
+    jge reserveBlock
+findNextBlock:
+    // Find the next block
     movq -16(%rbp), %rbx
     addq $16, %rbx
     addq -32(%rbp), %rbx
+    // Check if the next block exists
     call getBrk
     cmpq %rax, %rbx
-    jge extendeHeap # Caso próximo bloco inexistente
+    jge resizeHeap
+    // Update current block to the next one
     movq %rbx, -16(%rbp)
     movq 0(%rbx), %rax
     movq %rax, -24(%rbp)
     movq 8(%rbx), %rax
     movq %rax, -32(%rbp)
-    jmp buscaEspaco # Caso próximo bloco existente
-extendeHeap:
+    jmp searchFreeBlock
+resizeHeap:
+    // Resize the heap adding 1024 bytes to the brk
     call getBrk
     addq $1024, %rax
     movq %rax, %rdi
     movq $12, %rax
     syscall
     cmpq $0, -24(%rbp)
-    je funde # Caso último bloco ocupado
+    je mergeBlocks
+    // Create a new block in the resized heap right after the current one
     movq -16(%rbp), %rax
     addq $16, %rax
     addq -32(%rbp), %rax
     movq %rax, -16(%rbp)
     movq $0, -24(%rbp)
     movq $1024, -32(%rbp)
-    jmp achouEspaco
-funde:
+    jmp reserveBlock
+mergeBlocks:
+    // Update the current block size the resized heap 1024 bytes
     movq -16(%rbp), %rax
     addq $1024, 8(%rax)
     movq %rax, -32(%rbp)
-achouEspaco:
-    # Recupera o valor do parametro
-    movq -8(%rbp), %rax # tamanho
-    movq -16(%rbp), %rbx # bloco atual
-    movq -32(%rbp), %rcx # tamanho do bloco atual
-    # Atualiza metadados
+reserveBlock:
+    movq -8(%rbp), %rax
+    movq -16(%rbp), %rbx
+    movq -32(%rbp), %rcx
+    // Reserve space on the current block
     movq $1, 0(%rbx)
     movq %rax, 8(%rbx)
-    # Calcula espaco livre do proximo bloco
+    // Calculate the space occupied by the reserved block
     movq %rax, %rdx
     addq $16, %rdx
+    // Calculate the size of the remaining block
     subq %rdx, %rcx
-    # Get do endereco inicial do proximo bloco
+    // Find and create the remaining block
     addq %rbx, %rdx
-    # Atualiza os metadados do proximo bloco
     movq $0, 0(%rdx)
     movq %rcx, 8(%rdx)
-    # Retorna o endereco bloco alocado
+    // Return the address of data of the reserved block
     addq $16, %rbx
     movq %rbx, %rax
     addq $32, %rbp

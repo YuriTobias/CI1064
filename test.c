@@ -9,7 +9,7 @@ extern void iniciaAlocador();
 
 extern void finalizaAlocador();
 
-extern void* alocaMem(int);
+extern void* allocMem(int);
 
 extern void* topoInicialHeap;
 
@@ -27,19 +27,19 @@ int main() {
     iniciaAlocador();
     i = topoInicialHeap;
     printf("%p\n", i);
-    p = alocaMem(984);
+    p = allocMem(984);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = alocaMem(8);
+    p = allocMem(8);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = alocaMem(8);
+    p = allocMem(8);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = alocaMem(8);
+    p = allocMem(8);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = alocaMem(8);
+    p = allocMem(8);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = alocaMem(8);
+    p = allocMem(8);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = alocaMem(8);
+    p = allocMem(8);
     printf("-- %p (%li)\n", p, (p - i) * 4);
     // finalizaAlocador();
     // printf("%p\n", resetaHeap);
