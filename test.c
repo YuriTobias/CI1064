@@ -43,7 +43,7 @@ int main() {
     printf("-- %p (%li)\n", p, (p - i) * 4);
     p = allocMem(8);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    lliberaMem(topoInicialHeap + 16);
+    liberaMem(topoInicialHeap + 16);
     // liberaMem(topoInicialHeap+34);
     int* ptr = (int*)((char*)topoInicialHeap + 8);  // Convertemos para int* e somamos 8 bytes.
     int valor = *ptr;                               // Acessamos o valor inteiro.
