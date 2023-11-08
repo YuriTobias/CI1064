@@ -1,4 +1,8 @@
-#executable
+# executable
 a.out
 
+# object file
 test.o
+
+# .vscode
+.vscode
