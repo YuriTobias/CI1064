@@ -140,13 +140,14 @@ resizeHeap:
     movq %r10, -16(%rbp)
     movq $0, -24(%rbp)
     movq $1024, -32(%rbp)
-    jmp reserveBlock
+    jmp searchFreeBlock
 mergeBlocks:
     // Update the current block size the resized heap 1024 bytes
     movq -16(%rbp), %r10
     addq $1024, 8(%r10)
     movq 8(%r10), %r11
     movq %r11, -32(%rbp)
+    jmp searchFreeBlock
 reserveBlock:
     movq -8(%rbp), %rbx
     movq -16(%rbp), %r10
