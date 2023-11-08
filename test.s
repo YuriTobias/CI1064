@@ -75,74 +75,85 @@ finalizaAlocador:
     popq %rbp
     ret
 
+    // Memory allocation function with brk redimensioning and 
+
 alocaMem:
     pushq %rbp
     movq %rsp, %rbp
+    subq $32, %rbp
 
-    subq $16, %rbp
-
-    # Salva o rdi, ou seja, a quantidade de bytes a ser alocada
-    movq %rdi, -8(%rbp)
-
-    # Move o endereço do topo inicial da heap pro rax
+    # Variáveis locais:
+    # -8(%rbp) = %rdi = quantidade de bytes a ser alocada
+    # -16(%rbp) = %rax = endereço do bloco atual (inicialmente topoInicialHeap)
+    # -24(%rbp) = 0(%rax) = situação do bloco atual (0 = livre, 1 = ocupado)
+    # -32(%rbp) = 8(%rax) = tamanho do bloco atual
+    movq %rdi, -8(%rbp)    
     movq topoInicialHeap(%rip), %rax
     movq %rax, -16(%rbp)
-
-buscaEspaco:
-    # Check if the element pointed by rax is free (=0)
-    movq -16(%rbp), %rax
-    cmpq $0, 0(%rax)
-    jne buscaProximo
-    movq %rdi, %rbx
-    addq $16, %rbx
-    cmpq %rbx, 8(%rax)
-    jge achouEspaco
-
-buscaProximo:
-    # Encontra próximo bloco (atual+tamanho+16)
+    movq 0(%rax), %rbx
+    movq %rbx, -24(%rbp)
     movq 8(%rax), %rbx
+    movq %rbx, -32(%rbp)
+buscaEspaco:
+    cmpq $0, -24(%rbp)
+    jne buscaProximo # Caso bloco ocupado
+    movq -8(%rbp), %rax
+    addq $16, %rax
+    cmpq %rax, -32(%rbp)
+    jge achouEspaco # Caso bloco livre com tamanho suficiente
+buscaProximo:
+    movq -16(%rbp), %rbx
     addq $16, %rbx
-    addq %rbx, -16(%rbp)
-    # Checa se estourou a brk
+    addq -32(%rbp), %rbx
     call getBrk
-    cmpq -16(%rbp), %rax
-    # Se não estourou, segue a busca
-    jge buscaEspaco
-    # Se estourou, aloca mais e já presume que encontrou
+    cmpq %rax, %rbx
+    jge extendeHeap # Caso próximo bloco inexistente
+    movq %rbx, -16(%rbp)
+    movq 0(%rbx), %rax
+    movq %rax, -24(%rbp)
+    movq 8(%rbx), %rax
+    movq %rax, -32(%rbp)
+    jmp buscaEspaco # Caso próximo bloco existente
+extendeHeap:
+    call getBrk
     addq $1024, %rax
     movq %rax, %rdi
     movq $12, %rax
     syscall
+    cmpq $0, -24(%rbp)
+    je funde # Caso último bloco ocupado
     movq -16(%rbp), %rax
-achouEspaco: 
+    addq $16, %rax
+    addq -32(%rbp), %rax
+    movq %rax, -16(%rbp)
+    movq $0, -24(%rbp)
+    movq $1024, -32(%rbp)
+    jmp achouEspaco
+funde:
+    movq -16(%rbp), %rax
+    addq $1024, 8(%rax)
+    movq %rax, -32(%rbp)
+achouEspaco:
     # Recupera o valor do parametro
-    movq -8(%rbp), %rdi
-    
-    # Salva tamanho atual
-    movq 8(%rax), %rbx
-
+    movq -8(%rbp), %rax # tamanho
+    movq -16(%rbp), %rbx # bloco atual
+    movq -32(%rbp), %rcx # tamanho do bloco atual
     # Atualiza metadados
-    movq $1, (%rax)
-    movq %rdi, 8(%rax)
-
+    movq $1, 0(%rbx)
+    movq %rax, 8(%rbx)
     # Calcula espaco livre do proximo bloco
-    subq %rdi, %rbx
-    subq $16, %rbx
-
-    # Get do endereco inicial do proximo bloco
     movq %rax, %rdx
     addq $16, %rdx
-    addq 8(%rax), %rdx
-
+    subq %rdx, %rcx
+    # Get do endereco inicial do proximo bloco
+    addq %rbx, %rdx
     # Atualiza os metadados do proximo bloco
-    movq $0, (%rdx)
-    movq %rbx, 8(%rdx)
-
+    movq $0, 0(%rdx)
+    movq %rcx, 8(%rdx)
     # Retorna o endereco bloco alocado
-    addq $16, %rax
-
-    addq $16, %rbp
-
+    addq $16, %rbx
+    movq %rbx, %rax
+    addq $32, %rbp
     popq %rbp
     ret
 

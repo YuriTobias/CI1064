@@ -18,20 +18,29 @@ extern void* aposAlteracao;
 extern void* resetaHeap;
 
 int main() {
-    int c;
+    int c, *i, *p;
 
     // printf("%d\n", sum(15, 15));
     // printf("%d\n", sum_2(8));
     // printf("%p\n", iniciaAlocador());
     // topoInicialHeap = iniciaAlocador();
     iniciaAlocador();
-    printf("%p\n", topoInicialHeap);
-    printf("-- %p\n", alocaMem(2));
-    printf("-- %p\n", alocaMem(2));
-    // printf("-- %p\n", alocaMem(10));
-    // printf("-- %p\n", alocaMem(20));
-    // printf("-- %p\n", alocaMem(25));
-    // printf("-- %p\n", alocaMem(30));
+    i = topoInicialHeap;
+    printf("%p\n", i);
+    p = alocaMem(984);
+    printf("-- %p (%li)\n", p, (p - i) * 4);
+    p = alocaMem(8);
+    printf("-- %p (%li)\n", p, (p - i) * 4);
+    p = alocaMem(8);
+    printf("-- %p (%li)\n", p, (p - i) * 4);
+    p = alocaMem(8);
+    printf("-- %p (%li)\n", p, (p - i) * 4);
+    p = alocaMem(8);
+    printf("-- %p (%li)\n", p, (p - i) * 4);
+    p = alocaMem(8);
+    printf("-- %p (%li)\n", p, (p - i) * 4);
+    p = alocaMem(8);
+    printf("-- %p (%li)\n", p, (p - i) * 4);
     // finalizaAlocador();
     // printf("%p\n", resetaHeap);
 
