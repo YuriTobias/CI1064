@@ -24,28 +24,50 @@ extern void printMem();
 extern void printMemChars();
 
 int main() {
-    int c, *i, *p;
+    int c, valor, *i, *p, *ptr;
 
-    // printf("%d\n", sum(15, 15));
-    // printf("%d\n", sum_2(8));
-    // printf("%p\n", iniciaAlocador());
-    // topoInicialHeap = iniciaAlocador();
     iniciaAlocador();
     i = topoInicialHeap;
     printf("%p\n", i);
-    p = allocMem(4);
+    p = allocMem(2);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    p = allocMem(4);
+    p = allocMem(2);
     printf("-- %p (%li)\n", p, (p - i) * 4);
-    printMemChars();
-    printf("\n");
-    liberaMem(topoInicialHeap + 16);
-    //  liberaMem(topoInicialHeap+34);
-    int* ptr = (int*)((char*)topoInicialHeap + 8);  // Convertemos para int* e somamos 8 bytes.
-    int valor = *ptr;                               // Acessamos o valor inteiro.
+    p = allocMem(2);
+    printf("-- %p (%li)\n", p, (p - i) * 4);
+    // p = allocMem(2);
+    // printf("-- %p (%li)\n", p, (p - i) * 4);
+    // printMemChars();
+    // printf("\n");
+    ptr = (int*)((char*)topoInicialHeap + 8);  // Convertemos para int* e somamos 8 bytes.
+    valor = *ptr;                               // Acessamos o valor inteiro.
     printf("--- %d\n", valor);
-    // finalizaAlocador();
-    // printf("%p\n", resetaHeap);
+    ptr = (int*)((char*)topoInicialHeap + 26);  // Convertemos para int* e somamos 8 bytes.
+    valor = *ptr;                               // Acessamos o valor inteiro.
+    printf("--- %d\n", valor);
+    ptr = (int*)((char*)topoInicialHeap + 44);  // Convertemos para int* e somamos 8 bytes.
+    valor = *ptr;                               // Acessamos o valor inteiro.
+    printf("--- %d\n", valor);
+    ptr = (int*)((char*)topoInicialHeap + 62);  // Convertemos para int* e somamos 8 bytes.
+    valor = *ptr;                               // Acessamos o valor inteiro.
+    printf("--- %d\n", valor);
+    liberaMem(topoInicialHeap + 16);
+    liberaMem(topoInicialHeap + 52);
+    // liberaMem(topoInicialHeap + 34);
+    ptr = (int*)((char*)topoInicialHeap + 8);  // Convertemos para int* e somamos 8 bytes.
+    valor = *ptr;                               // Acessamos o valor inteiro.
+    printf("--- %d\n", valor);
+    ptr = (int*)((char*)topoInicialHeap + 26);  // Convertemos para int* e somamos 8 bytes.
+    valor = *ptr;                               // Acessamos o valor inteiro.
+    printf("--- %d\n", valor);
+    ptr = (int*)((char*)topoInicialHeap + 44);  // Convertemos para int* e somamos 8 bytes.
+    valor = *ptr;                               // Acessamos o valor inteiro.
+    printf("--- %d\n", valor);
+    ptr = (int*)((char*)topoInicialHeap + 62);  // Convertemos para int* e somamos 8 bytes.
+    valor = *ptr;  
+    printf("--- %d\n", valor);
+    finalizaAlocador();
+    printf("%p\n", resetaHeap);
 
     return 0;
 }
