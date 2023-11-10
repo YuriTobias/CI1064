@@ -162,6 +162,9 @@ checkNext:
     call getBrk
     cmpq %rax, %r10
     jge resizeHeap
+    movq -32(%rbp), %r11
+    movq %r11, -8(%rbp)
+    jmp allocCurrentBlock
 allocNext:
     movq -16(%rbp), %r10
     movq -8(%rbp), %rbx
