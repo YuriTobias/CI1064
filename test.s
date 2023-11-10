@@ -175,34 +175,28 @@ liberaMem:
     pushq %rbp
     movq %rsp, %rbp
     
-    # Reserva espaço para quatro variáveis
-    subq $32, %rsp
+    # Reserva espaço para duas variáveis
+    subq $16, %rsp
 
     # Guarda o valor do parâmetro em -8(%rbp)
     movq %rdi, -8(%rbp)
 
     # rax aponta pro bloco atual/inicial
-    # antes empilha o endereço de início dos metadados do bloco atual e joga 0/null no rbx
     movq topoInicialHeap(%rip), %rax
-    movq $0, %rbx
-    movq %rax, -16(%rbp)
     addq $16, %rax
 
-    # movq topoInicialHeap(%rip), %rbx
-    # addq 8(%rbx), %rbx
-    # addq $16, %rbx
-
 buscaElem:
-    cmpq %rax, -8(%rbp)
+    movq %rax, -16(%rbp)
+    cmpq -8(%rbp), %rax 
     je liberaBloco
-    # Volta o valor do rax pro endereço de início dos metadados do bloco
+    movq -16(%rbp), %rax
+
+    # Volta o valor do rax pra pegar o tamanho do bloco atual
     subq $16, %rax
-    # Atribui o valor do rax no rbx pra "salvar" o bloco "anterior" da próxima iteração
-    movq %rax, %rbx
     # Incrementa o valor do rax pra cair no próximo endereço e comparar novamente
     addq 8(%rax), %rax
-    # 16 dos metadados atuais + 16 dos metadados do próximo bloco
     addq $32, %rax
+
     jmp buscaElem
 
 liberaBloco:
@@ -210,60 +204,121 @@ liberaBloco:
     subq $16, %rax
     movq $0, (%rax)
 
-    # Empilha rax e rbx
-    movq %rax, -24(%rbp)
-    movq %rbx, -32(%rbp)
+    call chamaFusao
 
-    # Verifica se o anterior é null ou se tá livre, se sim, faz fusão
-    cmpq $0, %rbx
-    je verificaProximo
-    cmpq $0, (%rbx)
-    jne verificaProximo
+    # Libera o espaço reservado para as variáveis
+    addq $16, %rsp
+    
+    popq %rbp
+    ret
 
-fusaoBloco:
-    movq 8(%rax), %rdx
-    addq %rdx, 8(%rbx)
-    addq $16, 8(%rbx)
+chamaFusao:
+    pushq %rbp
+    movq %rsp, %rbp
 
-    movq %rbx, %rax
-    jmp verificaProximo
+    # Reserva espaço para duas variáveis
+    subq $16, %rsp
 
-verificaProximo:
-    # Desempilha rax e rbx
-    movq -24(%rbp), %rax
-    movq -32(%rbp), %rbx
-
-    # Anterior (rbx) = atual (rax)
+    # rax = início da heap
+    # rbx = início da heap
+    movq topoInicialHeap(%rip), %rax
     movq %rax, %rbx
-    # Atual (rax) = próximo (rax + 16 + 8(rax))
+    # rax = rax + 16 + tamanho do bloco (aponta pro segundo bloco)
+    addq 8(%rax), %rax
+    addq $16, %rax
+    # Empilha rax e rbx
+    movq %rax, -8(%rbp)
+    movq %rbx, -16(%rbp)
+
+    # Garante que o rax, por ser o próximo, não estourou a heap
+    call getBrk
+    cmpq -8(%rbp), %rax
+    # Se estourou, ou seja, brk < rax, finaliza fusão
+    jl finalizaLibera
+    
+    # Desempilha rax e rbx
+    movq -8(%rbp), %rax
+    movq -16(%rbp), %rbx
+
+buscaFusao:
+    # Compara se rax, ou seja, "próximo" elemento está livre
+    # Se estiver, verifica se o anterior também está
+    cmpq $0, (%rax)
+    je verificaAnterior
+
+    # Se não, rbx = rax
+    # rax = rax + 16 + tamanho do bloco (aponta pro segundo bloco)
+    movq %rax, %rbx
     addq 8(%rax), %rax
     addq $16, %rax
 
-    # Empilha rax
-    movq %rax, -24(%rbp)
-
-    # Pega brk e salva em rcx
+    # Empilha rax e rbx e verifica a brk novamente
+    movq %rax, -8(%rbp)
+    movq %rbx, -16(%rbp)
     call getBrk
-    movq %rax, %rcx
+    cmpq -8(%rbp), %rax
+    jle finalizaLibera
 
-    # Desempilha rax
-    movq -24(%rbp), %rax
+    # Desempilha rax, rbx e continua a execução
+    movq -8(%rbp), %rax
+    movq -16(%rbp), %rbx
 
-    # Compara brk com rax
-    cmpq %rcx, %rax
-    jg finalizaLibera
-    cmpq $0, (%rax)
-    je fusaoBloco
+    jmp buscaFusao
+
+verificaAnterior:
+    # Compara se rbx, ou seja, elemento atual está livre
+    # Se estiver faz a fusão com o próximo
+    cmpq $0, (%rbx)
+    je fusao
+
+    # Se não, rbx = rax
+    # rax = rax + 16 + tamanho do bloco (aponta pro segundo bloco)
+    movq %rax, %rbx
+    addq 8(%rax), %rax
+    addq $16, %rax
+
+    # Empilha rax e rbx e verifica a brk novamente
+    movq %rax, -8(%rbp)
+    movq %rbx, -16(%rbp)
+    call getBrk
+    cmpq -8(%rbp), %rax
+    jle finalizaLibera
+
+    # Desempilha rax, rbx e continua a execução
+    movq -8(%rbp), %rax
+    movq -16(%rbp), %rbx
+
+    jmp buscaFusao
+
+fusao:
+    # Move o tamanho do bloco de rax pro rdx e soma no tamanho do rbx
+    movq 8(%rbx), %rdx
+    addq $16, %rdx
+    addq 8(%rax), %rdx
+    movq %rdx, 8(%rbx)
+
+    # Muda o rax pro próximo
+    movq %rbx, %rax
+    addq $16, %rax
+    addq 8(%rbx), %rax
+
+    # Empilha rax e rbx e verifica a brk novamente
+    movq %rax, -8(%rbp)
+    movq %rbx, -16(%rbp)
+    call getBrk
+    cmpq -8(%rbp), %rax
+    jle finalizaLibera
+
+    # Desempilha rax, rbx e continua a execução
+    movq -8(%rbp), %rax
+    movq -16(%rbp), %rbx
+
+    jmp buscaFusao
 
 finalizaLibera:
-    # printf
-    # movq %rax, %rsi
-    # leaq formatString(%rip), %rdi
-    # call printf
-
     # Libera o espaço reservado para as variáveis
-    addq $32, %rsp
-    
+    addq $16, %rsp
+
     popq %rbp
     ret
 
