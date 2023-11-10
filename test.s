@@ -108,7 +108,6 @@ searchFreeBlock:
     jne findNextBlock
     // Check if current block has enough space
     movq -8(%rbp), %r10
-    addq $16, %r10
     cmpq %r10, -32(%rbp)
     jge reserveBlock
 findNextBlock:
@@ -149,28 +148,42 @@ mergeBlocks:
     movq %r11, -32(%rbp)
     jmp searchFreeBlock
 reserveBlock:
+    movq -8(%rbp), %r10
+    movq -32(%rbp), %r11
+    // Check if the current block has enough space to be split
+    subq %r10, %r11
+    cmpq $16, %r11
+    jge allocNext
+checkNext:
+    movq -16(%rbp), %r10
+    addq $16, %r10
+    addq -32(%rbp), %r10
+    // Check if the next block exists
+    call getBrk
+    cmpq %rax, %r10
+    jge resizeHeap
+allocNext:
+    movq -16(%rbp), %r10
+    movq -8(%rbp), %rbx
+    movq -32(%rbp), %r11
+    addq $16, %r10
+    addq %rbx, %r10
+    movq $0, 0(%r10)
+    subq $16, %r11
+    subq -8(%rbp), %r11
+    movq %r11, 8(%r10)
+allocCurrentBlock:
+    // Reserve space on the current block
     movq -8(%rbp), %rbx
     movq -16(%rbp), %r10
-    movq -32(%rbp), %r11
-    // Reserve space on the current block
     movq $1, 0(%r10)
     movq %rbx, 8(%r10)
-    // Calculate the space occupied by the reserved block
-    movq %rbx, %rdx
-    addq $16, %rdx
-    // Calculate the size of the remaining block
-    subq %rdx, %r11
-    // Find and create the remaining block
-    addq %r10, %rdx
-    movq $0, 0(%rdx)
-    movq %r11, 8(%rdx)
     // Return the address of data of the reserved block
     addq $16, %r10
     movq %r10, %rax
     addq $32, %rsp
     popq %rbp
     ret
-
 liberaMem:
     pushq %rbp
     movq %rsp, %rbp
@@ -410,8 +423,6 @@ iterateBlocks:
     cmpq $0, %r10
     je fimIterateBlocks
 validBlock:
-
-
     movq $0, -16(%rbp)
     movq $35, -24(%rbp)
 printMetaSection:
