@@ -337,6 +337,26 @@ printMemChars:
     movq topoInicialHeap(%rip), %r10
     movq %r10, -8(%rbp)
 iterateBlocks:
+    movq -8(%rbp), %r10
+    call getBrk
+    cmpq %rax, %r10
+    jge fimIterateBlocks
+    movq -8(%rbp), %r10
+    addq 8(%r10), %r10
+    addq $16, %r10
+    // Check if the next block exists
+    call getBrk
+    cmpq %rax, %r10
+    jl validBlock
+    movq -8(%rbp), %r10
+    addq 8(%r10), %r10
+    addq $16, %r10
+    movq 0(%r10), %r10
+    cmpq $0, %r10
+    je fimIterateBlocks
+validBlock:
+
+
     movq $0, -16(%rbp)
     movq $35, -24(%rbp)
 printMetaSection:
@@ -354,7 +374,7 @@ printMetaSection:
     cmpq $0, %r11
     je freeBlockChar
 reservedBlockChar:
-    movq $43, -24(%rbp)
+    movq $42, -24(%rbp)
     jmp printDataChar
 freeBlockChar:
     movq $45, -24(%rbp)
@@ -372,10 +392,8 @@ fimPrintDataChar:
     addq 8(%r10), %r10
     addq $16, %r10
     movq %r10, -8(%rbp)
-    // Check if the next block exists
-    call getBrk
-    cmpq %rax, %r10
-    jl iterateBlocks
+    jmp iterateBlocks
+fimIterateBlocks:
     // Finish function
     addq $32, %rsp
     popq %rbp
