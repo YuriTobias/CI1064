@@ -15,7 +15,7 @@
 .section .text
     .global iniciaAlocador
     .global finalizaAlocador
-    .global allocMem
+    .global alocaMem
     .global liberaMem
     .global topoInicialHeap
     .global resetaHeap
@@ -84,7 +84,7 @@ finalizaAlocador:
 
     // Memory allocation function with brk redimensioning and 
 
-allocMem:
+alocaMem:
     pushq %rbp
     movq %rsp, %rbp
     subq $32, %rsp
