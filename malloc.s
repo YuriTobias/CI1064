@@ -90,11 +90,16 @@ alocaMem:
         -24(%rbp) = current block status (0 = free, 1 = occupied)
         -32(%rbp) = current block size
     */
+    // Get the bytes to be allocated
     movq %rdi, -8(%rbp)    
+    // Get the initial heap address
     movq topoInicialHeap(%rip), %r10
+    // Set the current block address as the initial heap address
     movq %r10, -16(%rbp)
+    // Set the current block status as the initial heap status
     movq 0(%r10), %rbx
     movq %rbx, -24(%rbp)
+    // Set the current block size as the initial heap size
     movq 8(%r10), %rbx
     movq %rbx, -32(%rbp)
 searchFreeBlock:
@@ -104,6 +109,7 @@ searchFreeBlock:
     // Check if current block has enough space
     movq -8(%rbp), %r10
     cmpq %r10, -32(%rbp)
+    // If it has, reserve the block
     jge reserveBlock
 findNextBlock:
     // Find the next block
@@ -113,8 +119,9 @@ findNextBlock:
     // Check if the next block exists
     call getBrk
     cmpq %rax, %r10
+    // If it doesn't, resize the heap adding 1024 bytes to the brk
     jge resizeHeap
-    // Update current block to the next one
+    // Update current block to the next one and repeat the search
     movq %r10, -16(%rbp)
     movq 0(%r10), %r11
     movq %r11, -24(%rbp)
@@ -128,12 +135,15 @@ resizeHeap:
     movq %rax, %rdi
     movq $12, %rax
     syscall
+    // Check if the last block is free
     cmpq $0, -24(%rbp)
+    // If it is, merge the last block with the new one, resizing it
     je mergeBlocks
-    // Create a new block in the resized heap right after the current one
+    // Create a new block in the resized heap right after the current one (not resizing the last block)
     movq %r10, -16(%rbp)
     movq $0, -24(%rbp)
     movq $1024, -32(%rbp)
+    // Repeat the search to check if the new block has enough space
     jmp searchFreeBlock
 mergeBlocks:
     // Update the current block size the resized heap 1024 bytes
@@ -141,32 +151,44 @@ mergeBlocks:
     addq $1024, 8(%r10)
     movq 8(%r10), %r11
     movq %r11, -32(%rbp)
+    // Repeat the search to check if the new block has enough space
     jmp searchFreeBlock
 reserveBlock:
+    // Get the bytes to be allocated
     movq -8(%rbp), %r10
+    // Get the current block size
     movq -32(%rbp), %r11
     // Check if the current block has enough space to be split
     subq %r10, %r11
     cmpq $16, %r11
+    // If it has, split the block creating a new block with the second part
     jge allocNext
 checkNext:
+    // If it doesn't, check if the next block exists to avoid subscribing it
     movq -16(%rbp), %r10
     addq $16, %r10
     addq -32(%rbp), %r10
-    // Check if the next block exists
     call getBrk
     cmpq %rax, %r10
+    // If it doesn't, resize the heap adding 1024 bytes to the brk to allow the creation of a new block
     jge resizeHeap
+    // If it does, do not create a new block. Instead, alloc the remaining space on the current block
     movq -32(%rbp), %r11
     movq %r11, -8(%rbp)
     jmp allocCurrentBlock
 allocNext:
+    // Create a new block with the remaining space of the current block if it has enough space to be split
+    // Get the current block address
     movq -16(%rbp), %r10
+    // Get the bytes to be allocated
     movq -8(%rbp), %rbx
+    // Get the current block size
     movq -32(%rbp), %r11
+    // Get the remainder block address and create a new empty block
     addq $16, %r10
     addq %rbx, %r10
     movq $0, 0(%r10)
+    // Get the remainder block size and sets it
     subq $16, %r11
     subq -8(%rbp), %r11
     movq %r11, 8(%r10)
