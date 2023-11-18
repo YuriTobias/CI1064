@@ -1,47 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern int sum(int, int);
-
-extern int sum_2(int);
-
 extern void iniciaAlocador();
-
 extern void finalizaAlocador();
-
-extern void* allocMem(int);
-
-extern int liberaMem(void* block);
-
-extern void* topoInicialHeap;
-
-extern void* aposAlteracao;
-
-extern void* resetaHeap;
-
-extern void printMem();
-
-extern void printMemChars();
+extern void *alocaMem(int);
+extern int liberaMem(void *block);
+extern void imprimeMapa();
 
 int main() {
     void *a, *b;
-    int c, valor, *i, *p, *ptr;
 
-    iniciaAlocador();
-    printMemChars();  // vazio
-    printf("\n");
-    a = (void*)allocMem(10);
-    printMemChars();  // ################**********
-    printf("\n");
-    b = (void*)allocMem(4);
-    printMemChars();  // ################**********##############****
-    printf("\n");
+    iniciaAlocador();  // Impressão esperada
+    imprimeMapa();     // <vazio>
+
+    a = (void *)alocaMem(10);
+    imprimeMapa();  // ################++++++++++
+    b = (void *)alocaMem(4);
+    imprimeMapa();  // ################++++++++++##############++++
     liberaMem(a);
-    printMemChars();  // ################----------##############****
-    printf("\n");
-    liberaMem(b);
-    printMemChars();  // vazio
-    printf("\n");
-
-    return 0;
+    imprimeMapa();  // ################----------##############++++
+    liberaMem(b);   // ################----------------------------
+                    // ou
+                    // <vazio>
+    imprimeMapa();
+    finalizaAlocador();
 }

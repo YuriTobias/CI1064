@@ -4,3 +4,6 @@ all: test.s test.c
 
 run: a.out
 	./a.out
+
+clean:
+	rm -f a.out test.o

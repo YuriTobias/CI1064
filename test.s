@@ -4,9 +4,6 @@
     formatString:           .string "Valor da brk: %p\n"
     formatStringInit:       .string "Iniciando printf...\n"
     formatStringUltimo:     .string "Foi buscar o ultimo...\n"
-    formatStringCont:       .string "Continua pra comparar o tamanho...\n"
-    formatMallocError:      .string "Erro de alocacao de memoria (malloc)\n"
-    formatNumber:           .string "Number: %d\n"
     formatAddress:          .string "Block address: %p\n"
     formatStatus:           .string "      status: %d\n"
     formatSize:             .string "      size: %d\n"
@@ -18,8 +15,6 @@
     .global alocaMem
     .global liberaMem
     .global topoInicialHeap
-    .global resetaHeap
-    .global printMem
     .global imprimeMapa
 
 # Obtem o valor atual da brk
@@ -480,6 +475,9 @@ printDataCharWhileEnd:
     movq %r10, -8(%rbp) 
     jmp iterateBlocksWhile
 iterateBlocksWhileEnd:
+    movq $10, %rsi
+    leaq formatChar(%rip), %rdi
+    call printf
     // Finish function
     addq $32, %rsp
     popq %rbp
