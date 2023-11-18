@@ -1,8 +1,8 @@
 # executable
-a.out
+malloc.out
 
 # object file
-test.o
+malloc.o
 
 # .vscode
 .vscode

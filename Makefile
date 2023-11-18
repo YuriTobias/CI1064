@@ -1,9 +1,9 @@
-all: test.s test.c
-	as test.s -o test.o
-	gcc test.c test.o
+all: malloc.s main.c
+	as malloc.s -o malloc.o
+	gcc main.c malloc.o -o malloc.out
 
-run: a.out
-	./a.out
+run: malloc.out
+	./malloc.out
 
 clean:
-	rm -f a.out test.o
+	rm -f malloc.out malloc.o
