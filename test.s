@@ -20,7 +20,7 @@
     .global topoInicialHeap
     .global resetaHeap
     .global printMem
-    .global printMemChars
+    .global imprimeMapa
 
 # Obtem o valor atual da brk
 getBrk:
@@ -395,7 +395,7 @@ printLoop:
     popq %rbp
     ret
 
-printMemChars:
+imprimeMapa:
     pushq %rbp
     movq %rsp, %rbp
     subq $32, %rsp
@@ -405,64 +405,81 @@ printMemChars:
     -16(%rbp) = counter
     -24(%rbp) = char to print
     */
+    // Get the initial heap address
     movq topoInicialHeap(%rip), %r10
+    // Set the current block address as the initial heap address
     movq %r10, -8(%rbp)
-iterateBlocks:
+// Iterate over all blocks in the heap printing their status
+iterateBlocksWhile:
+    // Get the current block address
+    movq -8(%rbp), %r10 
+    // Get the current brk
+    call getBrk 
+    // Check if the current block address is greater than the current brk
+    cmpq %rax, %r10 
+    // If it is, finish the function
+    jge iterateBlocksWhileEnd
+    // Get the current block address
     movq -8(%rbp), %r10
-    call getBrk
-    cmpq %rax, %r10
-    jge fimIterateBlocks
-    movq -8(%rbp), %r10
-    addq 8(%r10), %r10
-    addq $16, %r10
-    // Check if the next block exists
-    call getBrk
-    cmpq %rax, %r10
-    jl validBlock
-    movq -8(%rbp), %r10
-    addq 8(%r10), %r10
-    addq $16, %r10
-    movq 0(%r10), %r10
-    cmpq $0, %r10
-    je fimIterateBlocks
-validBlock:
-    movq $0, -16(%rbp)
-    movq $35, -24(%rbp)
-printMetaSection:
+    // Set the counter to 0
+    movq $0, -16(%rbp) 
+    // Set the char to print as #
+    movq $35, -24(%rbp) 
+// Print the current block metadata (16 # characters)
+printMetaDoWhile: 
     movq -24(%rbp), %rsi
     leaq formatChar(%rip), %rdi
-    call printf
-    addq $1, -16(%rbp)
+    // Print #
+    call printf 
+    // Increment the counter
+    addq $1, -16(%rbp) 
+    // Check if the counter is equal to 16
     cmpq $16, -16(%rbp)
-    jl printMetaSection
-    // Print the current block status
-    movq -8(%rbp), %r10
-    movq 0(%r10), %r11
-    movq 8(%r10), %r10
-    movq %r10, -16(%rbp)
-    cmpq $0, %r11
-    je freeBlockChar
-reservedBlockChar:
-    movq $42, -24(%rbp)
-    jmp printDataChar
-freeBlockChar:
+    // If it is, continue printing the current block metadata
+    jl printMetaDoWhile 
+    // Get the current block address
+    movq -8(%rbp), %r10 
+    // Get the current block status
+    movq 0(%r10), %r11 
+    // Get the current block size
+    movq 8(%r10), %r10 
+    // Set the counter as the current block size
+    movq %r10, -16(%rbp) 
+    // Check if the current block is free
+    cmpq $0, %r11 
+    // If it is, set the char to print as -
+    je freeBlockChar 
+// Set the char to print as +
+reservedBlockChar: 
+    movq $43, -24(%rbp)
+    jmp printDataCharWhile
+// Set the char to print as -
+freeBlockChar: 
     movq $45, -24(%rbp)
-printDataChar:
+// Print the current block data status (block size + or - characters)
+printDataCharWhile:
+    // Check if the counter is equal to 0
     cmpq $0, -16(%rbp)
-    jle fimPrintDataChar
     movq -24(%rbp), %rsi
+    // If it is, finish printing the current block data status
+    jle printDataCharWhileEnd 
     leaq formatChar(%rip), %rdi
+    // Print + or -
     call printf
-    subq $1, -16(%rbp)
-    jmp printDataChar
-fimPrintDataChar:
-    // Update the current block address
+    // Decrement the counter
+    subq $1, -16(%rbp) 
+    jmp printDataCharWhile
+printDataCharWhileEnd:
+    // Get the current block address
     movq -8(%rbp), %r10
+    // Add the current block size to the current block address
     addq 8(%r10), %r10
+    // Add 16 to the current block address
     addq $16, %r10
-    movq %r10, -8(%rbp)
-    jmp iterateBlocks
-fimIterateBlocks:
+    // Set the current block address as the updated address
+    movq %r10, -8(%rbp) 
+    jmp iterateBlocksWhile
+iterateBlocksWhileEnd:
     // Finish function
     addq $32, %rsp
     popq %rbp
