@@ -1,9 +1,8 @@
 .section .data
     topoInicialHeap:        .quad 0
-    resetaHeap:             .quad 0
-    formatString:           .string "Valor da brk: %p\n"
-    formatStringInit:       .string "Iniciando printf...\n"
-    formatStringUltimo:     .string "Foi buscar o ultimo...\n"
+    topoFinalHeap:          .quad 0
+    formatString:           .string "Brk value: %p\n"
+    formatFirstString:      .string "Basic Software academic work... Izalorran Bonaldi & Yuri Tobias\n"
     formatAddress:          .string "Block address: %p\n"
     formatStatus:           .string "      status: %d\n"
     formatSize:             .string "      size: %d\n"
@@ -17,12 +16,12 @@
     .global topoInicialHeap
     .global imprimeMapa
 
-# Obtem o valor atual da brk
+// Gets the current value of brk
 getBrk:
     pushq %rbp
     movq %rsp, %rbp
 
-    # Pega o valor atual do brk vide tabela presente no livro
+    // Gets the current value of brk according to table 14 of the book
     movq $12, %rax
     movq $0, %rdi
     syscall
@@ -30,31 +29,31 @@ getBrk:
     popq %rbp
     ret
 
+// Runs syscall brk to get the address of the current top of the heap and stores it in a global variable, topStartHeap.
 iniciaAlocador:
     pushq %rbp
     movq %rsp, %rbp
 
-    # Chama printf para exibir uma mensagem
-    # O (%rip) eh util por conta do enderecamento relativo
-    leaq formatStringInit(%rip), %rdi
+    // Calls printf to display a message and allocate space in brk
+    // (%rip) is useful because of relative addressing
+    leaq formatFirstString(%rip), %rdi
     call printf
 
-    # Obtem o valor inicial da brk apos a chamada do printf
+    // Gets the initial value of brk after calling printf
     call getBrk
 
-    # Armazena o valor obtido na variavel global topoIniciaHeap
+    // Stores the value obtained in the global variable topoInicialHeap
     movq %rax, topoInicialHeap(%rip)
 
-    # Incrementa o valor da brk em 1040, ou seja,
-    # 8 bytes que dizem se o bloco ta livre ou nao
-    # 8 bytes que salvam o tamanho do bloco
-    # 1024 bytes do tamanho do bloco
+    // Increases the value of brk by 1040, that is,
+    // 16 bytes of metadata: 8 to know whether the block is free or not; and 8 to know the block size
+    // 1024 bytes of free block
     movq %rax, %rdi
     addq $1040, %rdi
     movq $12, %rax
     syscall
 
-    # Iniciando os valores
+    // Initializing the metadata of the first block
     movq topoInicialHeap(%rip), %rax
     movq $0, 0(%rax)
     movq $1024, 8(%rax)
@@ -62,23 +61,23 @@ iniciaAlocador:
     popq %rbp
     ret
 
+// Executes syscall brk to restore the heap's original value contained in topInicialHeap
 finalizaAlocador:
     pushq %rbp
     movq %rsp, %rbp
 
-    # Reseta o valor da brk pro seu valor inicial
-    movq $12, %rax
+    // Resets the brk value to its initial value
     movq topoInicialHeap(%rip), %rdi
+    movq $12, %rax
     syscall
 
-    # Armazena o novo valor da brk na variavel global resetaHeap
-    movq %rax, resetaHeap(%rip)
+    // Stores the new value of brk in the global variable topoFinalHeap
+    movq %rax, topoFinalHeap(%rip)
 
     popq %rbp
     ret
 
-    // Memory allocation function with brk redimensioning and 
-
+// Memory allocation function with brk redimensioning
 alocaMem:
     pushq %rbp
     movq %rsp, %rbp
@@ -204,169 +203,178 @@ allocCurrentBlock:
     addq $32, %rsp
     popq %rbp
     ret
+
+// Indicates that the block passed as a parameter is free
 liberaMem:
     pushq %rbp
     movq %rsp, %rbp
     
-    # Reserva espaço para duas variáveis
+    // Reserves space for two variables
     subq $16, %rsp
 
-    # Guarda o valor do parâmetro em -8(%rbp)
+    // Store the parameter value in -8(%rbp)
     movq %rdi, -8(%rbp)
 
-    # rax aponta pro bloco atual/inicial
+    // rax points to the first block
     movq topoInicialHeap(%rip), %rax
     addq $16, %rax
 
-buscaElem:
+findBlock:
+    // Stacks rax at -16(%rbp)
     movq %rax, -16(%rbp)
+    // Compares the parameter value with the rax value
     cmpq -8(%rbp), %rax 
-    je liberaBloco
+    // If it is the same, go to the procedure that free the block
+    je freeBlock
+
+    // Otherwise...
+    // Unstacks the last rax value
     movq -16(%rbp), %rax
 
-    # Volta o valor do rax pra pegar o tamanho do bloco atual
+    // Decrease the rax value to get the size of the current block
     subq $16, %rax
-    # Incrementa o valor do rax pra cair no próximo endereço e comparar novamente
+    // Increases the rax value to fall into the next block and compare again
     addq 8(%rax), %rax
+    // 32: two-block metadata
     addq $32, %rax
 
-    jmp buscaElem
+    // Start over
+    jmp findBlock
 
-liberaBloco:
-    # Volta o rax pro endereço de início dos metadados do bloco pra zerar a variável que diz se está livre ou não
+freeBlock:
+    // Decreases rax value to the start address of the block metadata
     subq $16, %rax
+    // Changes the value of the block's first metadata to 0, that is, free
     movq $0, (%rax)
 
-    call chamaFusao
+    // Calls the procedure that merges free nodes
+    call mergeNodes
 
-    # Libera o espaço reservado para as variáveis
+    // Frees up space reserved for variables
     addq $16, %rsp
     
     popq %rbp
     ret
 
-chamaFusao:
+mergeNodes:
     pushq %rbp
     movq %rsp, %rbp
 
-    # Reserva espaço para duas variáveis
+    // Reserves space for two variables
     subq $16, %rsp
 
-    # rax = início da heap
-    # rbx = início da heap
+    // rax & rbx = start of heap
     movq topoInicialHeap(%rip), %rax
     movq %rax, %rbx
-    # rax = rax + 16 + tamanho do bloco (aponta pro segundo bloco)
+
+    // Makes rax point to the second block of the heap
     addq 8(%rax), %rax
     addq $16, %rax
-    # Empilha rax e rbx
-    movq %rax, -8(%rbp)
-    movq %rbx, -16(%rbp)
-
-    # Garante que o rax, por ser o próximo, não estourou a heap
-    call getBrk
-    cmpq -8(%rbp), %rax
-    # Se estourou, ou seja, brk < rax, finaliza fusão
-    jl finalizaLibera
     
-    # Desempilha rax e rbx
+    // Stacks rax & rbx
+    movq %rax, -8(%rbp)
+    movq %rbx, -16(%rbp)
+
+    // Series of instructions to ensure that rax, as it is next, does not overflow the heap...
+    call getBrk
+    // -8(%rbp) is the value of the rax we are interested in &
+    // The current rax contains the value that was returned by the getBrk procedure
+    cmpq -8(%rbp), %rax
+    // If it bursts, that is, brk <= rax, thermal fusion
+    jle finishMerge
+    
+    // Unstack rax & rbx
     movq -8(%rbp), %rax
     movq -16(%rbp), %rbx
 
-buscaFusao:
-    # Compara se rax, ou seja, "próximo" elemento está livre
-    # Se estiver, verifica se o anterior também está
+startMerge:
+    // Checks if the next element (rax) is free
     cmpq $0, (%rax)
-    je verificaAnterior
+    // If so, also checks if the previous one is 
+    je isLastFree
 
-    # Se não, rbx = rax
-    # rax = rax + 16 + tamanho do bloco (aponta pro segundo bloco)
+    // Otherwise, update the pointers
     movq %rax, %rbx
     addq 8(%rax), %rax
     addq $16, %rax
 
-    # Empilha rax e rbx e verifica a brk novamente
+    // Stacks rax & rbx
     movq %rax, -8(%rbp)
     movq %rbx, -16(%rbp)
+
+    // Series of instructions explained in the "mergeNodes" label
     call getBrk
     cmpq -8(%rbp), %rax
-    jle finalizaLibera
+    jle finishMerge
 
-    # Desempilha rax, rbx e continua a execução
+    // Unstack rax & rbx
     movq -8(%rbp), %rax
     movq -16(%rbp), %rbx
 
-    jmp buscaFusao
+    jmp startMerge
 
-verificaAnterior:
-    # Compara se rbx, ou seja, elemento atual está livre
-    # Se estiver faz a fusão com o próximo
+isLastFree:
+    // Checks if the current/previous element is free
     cmpq $0, (%rbx)
-    je fusao
+    // If so, merge with the next one
+    je merge
 
-    # Se não, rbx = rax
-    # rax = rax + 16 + tamanho do bloco (aponta pro segundo bloco)
+    // Otherwise, update the pointers
     movq %rax, %rbx
     addq 8(%rax), %rax
     addq $16, %rax
 
-    # Empilha rax e rbx e verifica a brk novamente
+    // Stacks rax & rbx
     movq %rax, -8(%rbp)
     movq %rbx, -16(%rbp)
+
+    // Series of instructions explained in the "mergeNodes" label
     call getBrk
     cmpq -8(%rbp), %rax
-    jle finalizaLibera
+    jle finishMerge
 
-    # Desempilha rax, rbx e continua a execução
+    // Unstack rax & rbx
     movq -8(%rbp), %rax
     movq -16(%rbp), %rbx
 
-    jmp buscaFusao
+    jmp startMerge
 
-fusao:
-    # Move o tamanho do bloco de rax pro rdx e soma no tamanho do rbx
+merge:
+    // Move block size from current block to rdx
     movq 8(%rbx), %rdx
+    // Sum 16
     addq $16, %rdx
+    // Sum the size of the next block
     addq 8(%rax), %rdx
+    // Updates the current block size value
     movq %rdx, 8(%rbx)
 
-    # Muda o rax pro próximo
+    // rax = rbx
     movq %rbx, %rax
+    // rax points to the next node
     addq $16, %rax
     addq 8(%rbx), %rax
 
-    # Empilha rax e rbx e verifica a brk novamente
+    // Stacks rax & rbx
     movq %rax, -8(%rbp)
     movq %rbx, -16(%rbp)
+
+    // Series of instructions explained in the "mergeNodes" label
     call getBrk
     cmpq -8(%rbp), %rax
-    jle finalizaLibera
+    jle finishMerge
 
-    # Desempilha rax, rbx e continua a execução
+    // Unstack rax & rbx
     movq -8(%rbp), %rax
     movq -16(%rbp), %rbx
 
-    jmp buscaFusao
+    jmp startMerge
 
-finalizaLibera:
-    # Libera o espaço reservado para as variáveis
+finishMerge:
+    // Frees up space reserved for variables
     addq $16, %rsp
 
-    popq %rbp
-    ret
-
-fim_:
-    # Preparando a pilha para a chamada do printf
-    pushq %rbp
-    movq %rsp, %rbp
-    subq $8, %rsp
-
-    leaq formatStringUltimo(%rip), %rdi
-    call printf
-
-    # Restaurando a pilha
-    addq $8, %rsp
-
+    // Ends the procedure
     popq %rbp
     ret
 
