@@ -11,3 +11,15 @@ Durante as aulas, gosto de fazer anotações e copiar informações dos slides, 
 de alguns conceitos em partes mais teóricas da disciplina nos slides, além de muitas vezes ficar com anotações
 incompletas em função de um slide passado rapidamente. Fora isso, as aulas até aqui foram leves e divertidas e não
 tenho ressalvas a fazer.
+
+1 (Yuri): Se eu pudesse voltar no tempo, primeiramente eu recomendaria que eu fizesse ao menos uma rápida revisão de 
+assembly, ao menos das principais instruções como subq, addq, movq; isso com certeza já iria me poupar um tempo considerável
+no início do desenvolvimento desse trabalho. Segundamente, eu diria pra eu ler e reler ao menos 10 vezes o enunciado porque 
+apesar de ter lido bastante, no início ainda assim eu acabei tendo algumas interpretações equivocadas do que deveria ser 
+feito e acabei não implementando o que deveria. Por fim, diria pra eu tomar cuidado com a implementação em C porque em 
+particular no meu caso a mesma acabou não ajudando muito, quer dizer, ajudou bastante a entender o que deveria ser feito, 
+mas na hora de passar pra assembly não foi tão relevante :D;
+
+2 (Yuri): Sinceramente eu gosto bastante das aulas presenciais e também das gravadas. Além disso, achei a prova 1 muito bem 
+formulada e o trabalho também, inclusive o último eu achei extremamente interessante para aumentar o grau de absorção do 
+conteúdo inicial da disciplina. Nada a adicionar! Muito boa a disciplina!
