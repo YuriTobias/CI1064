@@ -3,11 +3,14 @@ Por um momento, me arrependi de não ter modularizado melhor os trechos de códi
 poderia dificultar as alterações sugeridas pelo docente, mas tal fato não se consumou e a alteração se deu sem
 maiores problemas.
 
-2 (Izalorran): Tive uma ótima experiência revisando o conteúdo da disciplina através dos vídeos antes da primeira
-prova e sinto que a ausência de material gravado afetou um pouco negativamente minha compreensão do conteúdo na
-segunda parte da disciplina. Ainda assim, o livro é muito bom e os slides são úteis. Senti um pouco de falta de
-definições mais formais de alguns conceitos nos slides em trechos mais teóricos da disciplina, mas entendo que posso
-buscá-los no livro. Fora isso, as aulas até aqui foram leves e divertidas e não tenho ressalvas a fazer.
+2 (Izalorran): O desenvolvimento do trabalho foi bastante interessante para compreender melhor o funcionamento
+dos conceitos da linguagem Assembly. Acredito que ter maior número de trabalhinhos menores poderiam potencializar
+o aprendizado, mas entendo que isso poderia aumentar a carga de trabalho do docente. Quanto ao material, o que mais
+me ajudou na revisão e fixação de conteúdo foram as aulas gravadas, mas o livro também foi de grande utilidade.
+Durante as aulas, gosto de fazer anotações e copiar informações dos slides, mas senti falta de definições mais formais
+de alguns conceitos em partes mais teóricas da disciplina nos slides, além de muitas vezes ficar com anotações
+incompletas em função de um slide passado rapidamente. Fora isso, as aulas até aqui foram leves e divertidas e não
+tenho ressalvas a fazer.
 
 1 (Yuri): Se eu pudesse voltar no tempo, primeiramente eu recomendaria que eu fizesse ao menos uma rápida revisão de 
 assembly, ao menos das principais instruções como subq, addq, movq; isso com certeza já iria me poupar um tempo considerável
