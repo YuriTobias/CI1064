@@ -20,3 +20,13 @@ mas na hora de passar pra assembly não foi tão relevante :D;
 2 (Yuri): Sinceramente eu gosto bastante das aulas presenciais e também das gravadas. Além disso, achei a prova 1 muito bem 
 formulada e o trabalho também, inclusive o último eu achei extremamente interessante para aumentar o grau de absorção do 
 conteúdo inicial da disciplina. Nada a adicionar! Muito boa a disciplina!
+
+3 Dado a forma como fizemos a implementação do alocador, a ideia foi adicionar mais duas variáveis locais na pilha, uma com o 
+endereço do maior bloco livre e outra com o tamanho do maior bloco livre. Isso dito, a primeira alteração e a mais evidente é 
+que em grande parte das operações ao invés de utilizarmos os valores do bloco atual para as comparações e alocações, a gente passou
+a utilizar os valores do bloco livre de maior tamanho; isso dito, existem vários trechos que passaram de "-16(%rbp)" para "-40(%rbp)"
+e de "-32(%rbp)" para "-48(%$rbp)". A segunda principal mudança é o fato de que ao invés de alocar assim que encontra o primeiro bloco
+livre com tamanho apropriado, ele itera pela heap até chegar na brk, salvando nas duas novas variáveis os dados do maior bloco livre.
+Essas alterações estão presentes nas linhas 115 - 119. Por fim, a última alteração relevante é que agora ele verifica, ao fim da iteração 
+se existe espaço suficiente no maior bloco e só então faz a alocação ou redimensionamento da heap caso necessário. Essas alterações estão 
+presentes nas linhas 128 - 135.

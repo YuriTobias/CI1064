@@ -1,0 +1,8 @@
+4. Observações:
+1. Na hora de iniciar o alocador, ao invés de aumentar o valor da brk em 1024 e liberar 1008 para uso, a gente inicia incrementa 1040 e libera 1024 para uso.
+Entretanto, das próximas vezes o valor da brk é incrementado de 1024 e o espaço do bloco livre é de 1008 (16 metadados + 1008 livre). 
+2. Ainda na hora de iniciar o alocador foi dito que deveriamos/poderíamos chamar o printf uma primeira vez para que o mesmo alterasse o valor da brk e já
+alocasse espaço suficiente para as impressões, então a frase "Basic Software academic work... Izalorran Bonaldi & Yuri Tobias" que aparece no início da saída
+vem daí. Além disso, a gente considera o primeiro valor da brk a partir daí, ou seja, após o printf alterar o valor da mesma;
+3. Na hora de alocar, a gente assegura que hajam pelo menos 16 bytes livres para alocar os metadados do próximo bloco, caso sobrem exatamente 16 bytes, a gente
+cria os metadados do próximo bloco cujo tamanho do bloco livre será de 0 bytes;
