@@ -1,49 +1,52 @@
 #include <stdio.h>
+
 #include "meuAlocador.h"
 
-int main (long int argc, char** argv) {
-  void *a,*b,*c,*d,*e;
+int main(long int argc, char **argv) {
+    void *a, *b, *c, *d, *e, *f, *g, *h, *j;
+    int i = 0;
 
-  iniciaAlocador(); 
-  imprimeMapa();
-  // 0) estado inicial
+    iniciaAlocador();
+    printf("%d\n", ++i);
+    imprimeMapa();
+    // 0) estado inicial
 
-  a=(void *) alocaMem(100);
-  imprimeMapa();
-  b=(void *) alocaMem(130);
-  imprimeMapa();
-  c=(void *) alocaMem(120);
-  imprimeMapa();
-  d=(void *) alocaMem(110);
-  imprimeMapa();
-  // 1) Espero ver quatro segmentos ocupados
+    a = (void *)alocaMem(240);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    b = (void *)alocaMem(240);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    c = (void *)alocaMem(240);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    d = (void *)alocaMem(240);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    liberaMem(a);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    liberaMem(c);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    e = (void *)alocaMem(32);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    f = (void *)alocaMem(64);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    g = (void *)alocaMem(32);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    g = (void *)alocaMem(240);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    g = (void *)alocaMem(240);
+    printf("%d\n", ++i);
+    imprimeMapa();
+    g = (void *)alocaMem(10);
+    printf("%d\n", ++i);
+    imprimeMapa();
 
-  liberaMem(b);
-  imprimeMapa(); 
-  liberaMem(d);
-  imprimeMapa(); 
-  // 2) Espero ver quatro segmentos alternando
-  //    ocupados e livres
-
-  b=(void *) alocaMem(50);
-  imprimeMapa();
-  d=(void *) alocaMem(90);
-  imprimeMapa();
-  e=(void *) alocaMem(40);
-  imprimeMapa();
-  // 3) Deduzam
-	
-  liberaMem(c);
-  imprimeMapa(); 
-  liberaMem(a);
-  imprimeMapa();
-  liberaMem(b);
-  imprimeMapa();
-  liberaMem(d);
-  imprimeMapa();
-  liberaMem(e);
-  imprimeMapa();
-   // 4) volta ao estado inicial
-
-  finalizaAlocador();
+    finalizaAlocador();
 }
